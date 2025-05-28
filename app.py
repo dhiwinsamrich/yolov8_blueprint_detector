@@ -1,5 +1,5 @@
 """
-Enhanced Blueprint Object Detection API
+Enhanced Blueprint Object Detection API with Drag & Drop Interface
 
 This FastAPI application provides an endpoint for detecting doors and windows in
 architectural blueprints using YOLOv8. The API accepts PNG/JPG images and returns
@@ -12,10 +12,14 @@ Key Improvements:
 - Additional documentation and metadata
 - Better configuration management
 - Improved response formats
+- New interactive drag and drop interface
+- Result visualization interface
+
+- For interface navigate to "http:URL_ADDRESS:8000/interactive".
 
 Author: Dhiwin Samrich
 Date: 28th May 2025
-Version: 1.1.0
+Version: 1.2.0
 """
 
 import os
@@ -29,6 +33,7 @@ from typing import List, Dict, Optional
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from ultralytics import YOLO
 import torch
@@ -43,12 +48,12 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app with enhanced metadata
 app = FastAPI(
     title="Blueprint Detection API",
-    version="1.1.0",
+    version="1.2.0",
     description="""Detect doors and windows from architectural blueprints using YOLOv8.
     Provides both detection results and visualization capabilities.""",
     contact={
         "name": "Dhiwin Samrich",
-        "email": "dhiwin@example.com",
+        "email": "dhiwinsamrichj.com",
     },
     license_info={
         "name": "MIT",
@@ -66,6 +71,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+# Serve static files (for the interactive interface)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Configuration
 class Config:
@@ -140,6 +148,460 @@ async def root():
         "model_loaded": bool(model),
         "model_path": model_path
     }
+
+@app.get("/interactive", tags=["UI"], response_class=HTMLResponse)
+async def interactive_interface():
+    """Interactive drag and drop interface for blueprint detection"""
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Blueprint Detection - Interactive</title>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f7fa;
+                color: #333;
+            }}
+            h1 {{
+                color: #2c3e50;
+                text-align: center;
+                margin-bottom: 30px;
+            }}
+            .container {{
+                display: flex;
+                flex-direction: column;
+                gap: 30px;
+            }}
+            .upload-section {{
+                background-color: white;
+                border-radius: 8px;
+                padding: 30px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }}
+            .drop-area {{
+                border: 3px dashed #3498db;
+                border-radius: 5px;
+                padding: 40px;
+                margin: 20px 0;
+                cursor: pointer;
+                transition: all 0.3s;
+                background-color: #f8fafc;
+            }}
+            .drop-area:hover {{
+                background-color: #e8f4fc;
+                border-color: #2980b9;
+            }}
+            .drop-area.highlight {{
+                background-color: #e8f4fc;
+                border-color: #2980b9;
+            }}
+            .file-input {{
+                display: none;
+            }}
+            .btn {{
+                background-color: #3498db;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.3s;
+            }}
+            .btn:hover {{
+                background-color: #2980b9;
+            }}
+            .btn:disabled {{
+                background-color: #95a5a6;
+                cursor: not-allowed;
+            }}
+            .results-section {{
+                display: none;
+                background-color: white;
+                border-radius: 8px;
+                padding: 30px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }}
+            .image-container {{
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+            }}
+            .image-box {{
+                flex: 1;
+                min-width: 300px;
+                text-align: center;
+            }}
+            .image-box img {{
+                max-width: 100%;
+                max-height: 500px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }}
+            .detections-table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }}
+            .detections-table th, .detections-table td {{
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+            }}
+            .detections-table th {{
+                background-color: #3498db;
+                color: white;
+            }}
+            .detections-table tr:nth-child(even) {{
+                background-color: #f2f2f2;
+            }}
+            .detections-table tr:hover {{
+                background-color: #e6f7ff;
+            }}
+            .loading {{
+                display: none;
+                text-align: center;
+                margin: 20px 0;
+            }}
+            .spinner {{
+                border: 5px solid #f3f3f3;
+                border-top: 5px solid #3498db;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto;
+            }}
+            @keyframes spin {{
+                0% {{ transform: rotate(0deg); }}
+                100% {{ transform: rotate(360deg); }}
+            }}
+            .status {{
+                margin-top: 10px;
+                font-weight: bold;
+            }}
+            .error {{
+                color: #e74c3c;
+                margin-top: 20px;
+            }}
+            .success {{
+                color: #27ae60;
+            }}
+            .controls {{
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-top: 20px;
+            }}
+            .slider-container {{
+                margin: 20px 0;
+                text-align: center;
+            }}
+            .slider-container label {{
+                display: block;
+                margin-bottom: 8px;
+                font-weight: bold;
+            }}
+            .slider {{
+                width: 300px;
+                max-width: 100%;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>Blueprint Object Detection</h1>
+        
+        <div class="container">
+            <div class="upload-section">
+                <h2>Upload Blueprint Image</h2>
+                <p>Drag & drop your blueprint image file here or click to select</p>
+                
+                <div id="dropArea" class="drop-area">
+                    <p>PNG, JPG, or JPEG files only</p>
+                    <input type="file" id="fileInput" class="file-input" accept="image/png, image/jpeg">
+                    <button class="btn" id="selectBtn">Select File</button>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="confidenceSlider">Confidence Threshold: <span id="confidenceValue">0.25</span></label>
+                    <input type="range" id="confidenceSlider" class="slider" min="0.01" max="0.99" step="0.01" value="0.25">
+                </div>
+                
+                <div class="slider-container">
+                    <label for="iouSlider">IOU Threshold: <span id="iouValue">0.45</span></label>
+                    <input type="range" id="iouSlider" class="slider" min="0.01" max="0.99" step="0.01" value="0.45">
+                </div>
+                
+                <div class="controls">
+                    <button class="btn" id="processBtn" disabled>Process Image</button>
+                    <button class="btn" id="resetBtn">Reset</button>
+                </div>
+                
+                <div id="status" class="status"></div>
+                <div id="error" class="error"></div>
+                
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing image...</p>
+                </div>
+            </div>
+            
+            <div id="resultsSection" class="results-section">
+                <h2>Detection Results</h2>
+                <div class="image-container">
+                    <div class="image-box">
+                        <h3>Original Image</h3>
+                        <img id="originalImage" src="" alt="Original image">
+                    </div>
+                    <div class="image-box">
+                        <h3>Detections</h3>
+                        <img id="resultImage" src="" alt="Result with detections">
+                    </div>
+                </div>
+                
+                <h3>Detection Details</h3>
+                <table class="detections-table">
+                    <thead>
+                        <tr>
+                            <th>Label</th>
+                            <th>Confidence</th>
+                            <th>Bounding Box (px)</th>
+                            <th>Normalized BBox</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detectionsBody">
+                        <!-- Detections will be inserted here -->
+                    </tbody>
+                </table>
+                
+                <div class="controls">
+                    <button class="btn" id="downloadBtn">Download Results</button>
+                    <button class="btn" id="newImageBtn">Process New Image</button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            // DOM elements
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const selectBtn = document.getElementById('selectBtn');
+            const processBtn = document.getElementById('processBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const newImageBtn = document.getElementById('newImageBtn');
+            const loadingDiv = document.getElementById('loading');
+            const statusDiv = document.getElementById('status');
+            const errorDiv = document.getElementById('error');
+            const resultsSection = document.getElementById('resultsSection');
+            const originalImage = document.getElementById('originalImage');
+            const resultImage = document.getElementById('resultImage');
+            const detectionsBody = document.getElementById('detectionsBody');
+            const confidenceSlider = document.getElementById('confidenceSlider');
+            const iouSlider = document.getElementById('iouSlider');
+            const confidenceValue = document.getElementById('confidenceValue');
+            const iouValue = document.getElementById('iouValue');
+            
+            // Variables
+            let selectedFile = null;
+            let imagePreviewUrl = null;
+            
+            // Event listeners
+            selectBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            dropArea.addEventListener('dragover', handleDragOver);
+            dropArea.addEventListener('dragleave', handleDragLeave);
+            dropArea.addEventListener('drop', handleDrop);
+            processBtn.addEventListener('click', processImage);
+            resetBtn.addEventListener('click', resetForm);
+            downloadBtn.addEventListener('click', downloadResults);
+            newImageBtn.addEventListener('click', resetForm);
+            confidenceSlider.addEventListener('input', updateSliderValue);
+            iouSlider.addEventListener('input', updateSliderValue);
+            
+            // Update slider value displays
+            function updateSliderValue() {{
+                confidenceValue.textContent = confidenceSlider.value;
+                iouValue.textContent = iouSlider.value;
+            }}
+            
+            // Handle file selection
+            function handleFileSelect(e) {{
+                const file = e.target.files[0];
+                if (file) validateAndPreviewFile(file);
+            }}
+            
+            // Handle drag over
+            function handleDragOver(e) {{
+                e.preventDefault();
+                dropArea.classList.add('highlight');
+            }}
+            
+            // Handle drag leave
+            function handleDragLeave() {{
+                dropArea.classList.remove('highlight');
+            }}
+            
+            // Handle drop
+            function handleDrop(e) {{
+                e.preventDefault();
+                dropArea.classList.remove('highlight');
+                
+                const file = e.dataTransfer.files[0];
+                if (file) validateAndPreviewFile(file);
+            }}
+            
+            // Validate and preview file
+            function validateAndPreviewFile(file) {{
+                // Check file type
+                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (!validTypes.includes(file.type)) {{
+                    showError('Please upload a JPEG or PNG image file.');
+                    return;
+                }}
+                
+                // Check file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {{
+                    showError('File size too large. Maximum 10MB allowed.');
+                    return;
+                }}
+                
+                // Clear any previous errors
+                clearError();
+                
+                // Store the file
+                selectedFile = file;
+                
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = (e) => {{
+                    imagePreviewUrl = e.target.result;
+                    statusDiv.textContent = `Selected: ${{file.name}} (${{(file.size / 1024 / 1024).toFixed(2)}} MB)`;
+                    statusDiv.className = 'status success';
+                    processBtn.disabled = false;
+                }};
+                reader.readAsDataURL(file);
+            }}
+            
+            // Process the image
+            async function processImage() {{
+                if (!selectedFile) return;
+                
+                // Show loading state
+                loadingDiv.style.display = 'block';
+                processBtn.disabled = true;
+                clearError();
+                
+                try {{
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+                    formData.append('conf', confidenceSlider.value);
+                    formData.append('iou', iouSlider.value);
+                    formData.append('return_image', 'true');
+                    
+                    const response = await fetch('/detect', {{
+                        method: 'POST',
+                        body: formData
+                    }});
+                    
+                    if (!response.ok) {{
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Failed to process image');
+                    }}
+                    
+                    const result = await response.json();
+                    
+                    // Display results
+                    displayResults(result);
+                    
+                }} catch (error) {{
+                    showError(error.message);
+                }} finally {{
+                    loadingDiv.style.display = 'none';
+                }}
+            }}
+            
+            // Display results
+            function displayResults(result) {{
+                // Show original and result images
+                originalImage.src = imagePreviewUrl;
+                resultImage.src = result.visualization;
+                
+                // Populate detections table
+                detectionsBody.innerHTML = '';
+                result.detections.forEach(det => {{
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${{det.label}}</td>
+                        <td>${{(det.confidence * 100).toFixed(1)}}%</td>
+                        <td>[x:${{det.bbox[0].toFixed(0)}}, y:${{det.bbox[1].toFixed(0)}}, 
+                            w:${{det.bbox[2].toFixed(0)}}, h:${{det.bbox[3].toFixed(0)}}]</td>
+                        <td>[x:${{det.bbox_normalized[0].toFixed(4)}}, y:${{det.bbox_normalized[1].toFixed(4)}}, 
+                            w:${{det.bbox_normalized[2].toFixed(4)}}, h:${{det.bbox_normalized[3].toFixed(4)}}]</td>
+                    `;
+                    detectionsBody.appendChild(row);
+                }});
+                
+                // Update status
+                statusDiv.textContent = `Processed successfully - ${{result.detections.length}} detections found`;
+                statusDiv.className = 'status success';
+                
+                // Show results section
+                resultsSection.style.display = 'block';
+                
+                // Scroll to results
+                resultsSection.scrollIntoView({{ behavior: 'smooth' }});
+            }}
+            
+            // Download results
+            function downloadResults() {{
+                if (!resultImage.src) return;
+                
+                const link = document.createElement('a');
+                link.href = resultImage.src;
+                link.download = 'detections_' + selectedFile.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }}
+            
+            // Reset form
+            function resetForm() {{
+                selectedFile = null;
+                imagePreviewUrl = null;
+                fileInput.value = '';
+                statusDiv.textContent = '';
+                errorDiv.textContent = '';
+                processBtn.disabled = true;
+                resultsSection.style.display = 'none';
+                detectionsBody.innerHTML = '';
+            }}
+            
+            // Show error
+            function showError(message) {{
+                errorDiv.textContent = message;
+                statusDiv.textContent = '';
+                processBtn.disabled = true;
+            }}
+            
+            // Clear error
+            function clearError() {{
+                errorDiv.textContent = '';
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 @app.get("/health", tags=["System"])
 async def health_check():
@@ -315,66 +777,12 @@ async def visualize(
             detail=f"An error occurred during visualization: {str(e)}"
         )
 
-@app.get("/docs-html", tags=["Documentation"], include_in_schema=False)
-async def custom_docs():
-    """Custom HTML documentation page"""
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>{app.title}</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-            h1 {{ color: #2c3e50; }}
-            h2 {{ color: #3498db; margin-top: 30px; }}
-            .endpoint {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
-            .method {{ font-weight: bold; color: #27ae60; }}
-            code {{ background-color: #eee; padding: 2px 5px; border-radius: 3px; }}
-            .try-it {{ display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 4px; }}
-        </style>
-    </head>
-    <body>
-        <h1>{app.title}</h1>
-        <p>Version: {app.version}</p>
-        <p>{app.description}</p>
-        
-        <h2>Endpoints</h2>
-        
-        <div class="endpoint">
-            <p><span class="method">GET</span> <code>/</code> - Root endpoint</p>
-            <p>Returns basic API information and status.</p>
-            <a href="/" class="try-it">Try it</a>
-        </div>
-        
-        <div class="endpoint">
-            <p><span class="method">POST</span> <code>/detect</code> - Object detection</p>
-            <p>Detect doors and windows in architectural blueprints.</p>
-            <a href="/docs#/default/detect_detect_post" class="try-it">Try it in Swagger UI</a>
-        </div>
-        
-        <div class="endpoint">
-            <p><span class="method">POST</span> <code>/visualize</code> - Detection visualization</p>
-            <p>Get an image with bounding boxes drawn around detected objects.</p>
-            <a href="/docs#/default/visualize_visualize_post" class="try-it">Try it in Swagger UI</a>
-        </div>
-        
-        <div class="endpoint">
-            <p><span class="method">GET</span> <code>/health</code> - Health check</p>
-            <p>Check system and model status.</p>
-            <a href="/health" class="try-it">Try it</a>
-        </div>
-        
-        <h2>Documentation</h2>
-        <p><a href="/docs">Interactive Swagger UI</a></p>
-        <p><a href="/redoc">ReDoc Documentation</a></p>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
-
 def main():
     """Run the application using Uvicorn"""
     import uvicorn
+    
+    # Create static directory if it doesn't exist
+    os.makedirs("static", exist_ok=True)
     
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(
