@@ -4,7 +4,7 @@
 IMAGE_PATH="D:\Handson Experience\blueprint-detection\datasets\Complete Images\Images\4.png"
 
 # API endpoint
-URL="http://127.0.0.1:8000/detect"
+URL="https://blueprint-detector.onrender.com/detect"
 
 # Confidence threshold and return image flag
 CONFIDENCE="0.25"

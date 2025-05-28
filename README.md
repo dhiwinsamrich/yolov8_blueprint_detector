@@ -1,8 +1,3 @@
-# Blueprint Detection Project
-
-A YOLOv8-powered FastAPI application for detecting doors and windows in architectural blueprint images. This version introduces a fully interactive drag-and-drop interface, detailed detection outputs, image visualization, and intelligent model management.
-
-````markdown
 # 🏗️ Blueprint Detection Project
 
 A YOLOv8-powered FastAPI application for detecting **doors and windows** in architectural blueprint images. This version introduces a fully **interactive drag-and-drop interface**, detailed detection outputs, image visualization, and intelligent model management.
@@ -46,14 +41,83 @@ Then visit:
 
 ## 📤 Example API Request
 
-Send an image to the `/detect` endpoint using `curl`:
+Send an image to the `/detect` endpoint using `curl`. Replace `path/to/your/image.jpg` with the actual path to your image file.
 
 ```bash
-curl -X POST -F "file=@path/to/image.jpg" \
+curl -X POST -F "file=@path/to/your/image.jpg" \
 "http://localhost:8000/detect?conf=0.25&iou=0.45&return_image=true"
 ```
 
 ✅ Returns JSON with detection info and optionally a base64 image with bounding boxes.
+
+--- 
+
+## 📊 Training and Labeling Evidence
+
+### Model Training Screenshots
+
+Here are some screenshots from the model training process, showcasing loss graphs and console output:
+
+**Loss Graph (Final Result):**
+
+![Training Final Result](Screenshots/Training%20Logs/Final%20Result.png)
+
+**Console Output (Sample Epoch):**
+
+![Training 100th Epoch](Screenshots/Training%20Logs/100th%20Epoch.png)
+
+### Data Labeling with LabelImg
+
+We used LabelImg for annotating doors and windows in the blueprint images. 
+
+**LabelImg Interface in Action:**
+
+![LabelImg Screenshot 1](Screenshots/Annotations/image1.png)
+*Example of annotating objects in LabelImg.*
+
+![LabelImg Screenshot 2](Screenshots/Annotations/image2.png)
+*Another view of the labeling process.*
+
+### Sample Label Files (`.txt`)
+
+The annotations are saved in YOLO `.txt` format. Each line represents one bounding box: `class_id center_x center_y width height` (all values are normalized).
+
+**Example 1: `datasets/labels/train/10_png.rf.68ff4de97cc623b3ac5c49b5cbd22fc1.txt`**
+```txt
+0 0.7734375 0.25390625 0.0765625 0.0703125
+0 0.59765625 0.17421875 0.05 0.040625
+0 0.378125 0.8609375 0.065625 0.06875
+0 0.8328125 0.63046875 0.0625 0.0515625
+1 0.8046875 0.57265625 0.0421875 0.0515625
+1 0.80078125 0.93671875 0.05 0.03125
+1 0.54140625 0.87890625 0.0703125 0.034375
+1 0.29921875 0.3609375 0.0703125 0.0453125
+1 0.12421875 0.321875 0.0578125 0.046875
+```
+
+**Example 2: `datasets/labels/train/12_png.rf.45c0e4516b0ec6f04bac3e785d96371c.txt`**
+```txt
+0 0.74609375 0.8859375 0.0390625 0.0375
+0 0.415625 0.84296875 0.0328125 0.0359375
+0 0.5046875 0.86484375 0.0375 0.0328125
+0 0.525 0.77578125 0.0375 0.0328125
+0 0.54609375 0.81640625 0.0390625 0.0359375
+0 0.60234375 0.790625 0.0359375 0.034375
+1 0.66171875 0.996875 0.0546875 0.00625
+1 0.42890625 0.95390625 0.05 0.0234375
+1 0.50703125 0.65390625 0.0515625 0.0234375
+1 0.4171875 0.68125 0.015625 0.0265625
+# ... (additional lines truncated for brevity in README)
+```
+
+### 🎯 Detected Classes
+
+This model is trained to detect the following classes:
+
+- **`0`: door**
+- **`1`: window**
+
+These correspond to the `class_id` in the `.txt` label files and the `label` field in the API's JSON response.
 
 ---
 
@@ -158,7 +222,7 @@ sudo uvicorn new_version:app --host 0.0.0.0 --port 80
 ## 👤 Author
 
 **Dhiwin Samrich**
-📧 [dhiwin@example.com](mailto:dhiwin@example.com)
+📧 [dhiwinsamrichj@gmail.com](mailto:dhiwinsamrichj@gmail.com)
 
 ---
 
