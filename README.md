@@ -2,6 +2,13 @@
 
 A YOLOv8-powered FastAPI application for detecting **doors and windows** in architectural blueprint images. This version introduces a fully **interactive drag-and-drop interface**, detailed detection outputs, image visualization, and intelligent model management.
 
+## 🔄 System Flow Diagram
+
+The following diagram illustrates the overall architecture and data flow of the Blueprint Detection system:
+
+![Blueprint Detection Flow Diagram](Flow%20Diagram.png)
+*System architecture showing the flow from input blueprint images through the YOLOv8 model to detection results.*
+
 ---
 
 ## ✨ Features
