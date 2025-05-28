@@ -1,0 +1,4 @@
+train: datasets/images/train
+val: datasets/images/valid
+nc: 2
+names: ['door', 'window']

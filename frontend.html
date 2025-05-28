@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blueprint Detector</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    #drop-area {
+      border: 2px dashed #4a90e2;
+      border-radius: 1rem;
+      padding: 2rem;
+      background: white;
+      margin: 2rem auto;
+      width: 400px;
+    }
+
+    #drop-area.hover {
+      background-color: #e6f2ff;
+    }
+
+    #preview {
+      margin-top: 1rem;
+    }
+
+    #json-output {
+      margin-top: 1rem;
+      text-align: left;
+      white-space: pre-wrap;
+      background: #eee;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      max-width: 700px;
+      margin: 1rem auto;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Blueprint Object Detection</h1>
+  <div id="drop-area">
+    <p>Drag and drop an image here<br>or click to upload</p>
+    <input type="file" id="fileElem" accept="image/*" style="display:none">
+    <button onclick="document.getElementById('fileElem').click()">Choose Image</button>
+  </div>
+
+  <div id="preview"></div>
+  <div id="json-output"></div>
+
+  <script>
+    const dropArea = document.getElementById('drop-area');
+    const preview = document.getElementById('preview');
+    const jsonOutput = document.getElementById('json-output');
+
+    ['dragenter', 'dragover'].forEach(event => {
+      dropArea.addEventListener(event, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropArea.classList.add('hover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(event => {
+      dropArea.addEventListener(event, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropArea.classList.remove('hover');
+      }, false);
+    });
+
+    dropArea.addEventListener('drop', e => {
+      const file = e.dataTransfer.files[0];
+      handleFile(file);
+    });
+
+    document.getElementById('fileElem').addEventListener('change', e => {
+      const file = e.target.files[0];
+      handleFile(file);
+    });
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        alert("Please upload a valid image file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("conf", "0.25");
+      formData.append("return_image", "true");
+
+      fetch("http://localhost:8000/detect", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Show image
+        if (data.image_base64) {
+          const img = new Image();
+          img.src = data.image_base64;
+          img.style.maxWidth = "100%";
+          preview.innerHTML = "";
+          preview.appendChild(img);
+        }
+
+        // Show JSON
+        jsonOutput.textContent = JSON.stringify(data.detections, null, 2);
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        alert("Detection failed. Check console or server logs.");
+      });
+    }
+  </script>
+</body>
+</html>

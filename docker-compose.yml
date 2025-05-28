@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  blueprint-detection:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    volumes:
+      - ./models:/app/models
+    restart: unless-stopped
