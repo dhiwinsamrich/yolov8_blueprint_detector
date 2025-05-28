@@ -121,6 +121,58 @@ These correspond to the `class_id` in the `.txt` label files and the `label` fie
 
 ---
 
+## 🖼️ Application and Deployment Screenshots
+
+This section showcases the application in action, including detection results and deployment logs.
+
+### Detection Results
+
+**Sample Detection Result 1:**
+
+![Detection Result 1](Screenshots/Result/Result%201.png)
+*Example of detections on a blueprint image.*
+
+**Interactive Frontend Test:**
+
+![Frontend HTML Test](Screenshots/Result/test_frontend_HTML.png)
+*Testing the interactive frontend with an uploaded image and its detections.*
+
+**Bash API Test Result:**
+
+![Bash API Test](Screenshots/Result/test_1_bash.png)
+*Result of testing the API via a bash `curl` command, showing the visualized output.*
+
+**Online Test (Render Deployment):**
+
+![Online Test via Render](Screenshots/Result/test_online.png)
+*Screenshot of the application running online after deployment on Render.*
+
+### Deployment Logs
+
+**Render Deployment Logs:**
+
+![Render Deployment Logs](Screenshots/Deployment/Logs_Render.png)
+*Logs from a successful deployment to the Render platform.*
+
+### Additional Training Log Screenshots
+
+**Training Progress (59th Epoch):**
+
+![Training 59th Epoch](Screenshots/Training%20Logs/59th%20Epoch.png)
+*Console output showing training progress at the 59th epoch.*
+
+**Training Progress (77th Epoch):**
+
+![Training 77th Epoch](Screenshots/Training%20Logs/77th%20Epoch.png)
+*Console output showing training progress at the 77th epoch.*
+
+**Training Progress (88th Epoch):**
+
+![Training 88th Epoch](Screenshots/Training%20Logs/88th%20Epoch.png)
+*Console output showing training progress at the 88th epoch.*
+
+---
+
 ## 🛑 Stop the Container
 
 ```bash
