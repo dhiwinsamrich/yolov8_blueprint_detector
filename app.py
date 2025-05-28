@@ -15,8 +15,6 @@ Key Improvements:
 - New interactive drag and drop interface
 - Result visualization interface
 
-- For interface navigate to "http:URL_ADDRESS:8000/interactive".
-
 Author: Dhiwin Samrich
 Date: 28th May 2025
 Version: 1.2.0
@@ -53,7 +51,7 @@ app = FastAPI(
     Provides both detection results and visualization capabilities.""",
     contact={
         "name": "Dhiwin Samrich",
-        "email": "dhiwinsamrichj.com",
+        "email": "dhiwin@example.com",
     },
     license_info={
         "name": "MIT",
@@ -146,7 +144,8 @@ async def root():
         "version": app.version,
         "status": "running",
         "model_loaded": bool(model),
-        "model_path": model_path
+        "model_path": model_path,
+        "Interactive page": "https://yolov8-blueprint-detector.onrender.com/interactive"
     }
 
 @app.get("/interactive", tags=["UI"], response_class=HTMLResponse)
