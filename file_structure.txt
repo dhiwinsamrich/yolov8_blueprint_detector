@@ -1,0 +1,64 @@
+.
+├── .dockerignore
+├── Annotated Files/
+│   ├── door-window-detection.v1i.yolov8-obb.zip
+│   └── door-window-detection.v1i.yolov8.zip
+├── Dockerfile
+├── LICENSE
+├── README.md
+├── Screenshots/
+│   ├── Annotations/
+│   │   ├── image1.png
+│   │   └── image2.png
+│   ├── Result/
+│   │   ├── Result 1.png
+│   │   ├── test_1_bash.png
+│   │   └── test_frontend_HTML.png
+│   └── Training Logs/
+│       ├── 100th Epoch.png
+│       ├── 59th Epoch.png
+│       ├── 77th Epoch.png
+│       ├── 88th Epoch.png
+│       └── Final Result.png
+├── Test_Handling.py
+├── __pycache__/
+│   └── app.cpython-38.pyc
+├── app.py
+├── classes.txt
+├── config.yaml
+├── datasets/
+│   ├── Complete Images/
+│   │   ├── Images/
+│   │   └── Images.rar
+│   ├── images/
+│   │   ├── train/
+│   │   └── valid/
+│   └── labels/
+│       ├── test/
+│       ├── train/
+│       ├── train.cache
+│       ├── valid/
+│       └── valid.cache
+├── deployment.md
+├── docker-compose.yml
+├── frontend.html
+├── labels/ (empty or contains other files not listed)
+├── models/
+│   ├── best.pt
+│   └── blueprint_detector.pt
+├── render.yaml
+├── requirements.txt
+├── runs/
+│   └── detect/
+│       ├── doors_windows/
+│       ├── doors_windows2/
+│       ├── doors_windows3/
+│       ├── doors_windows4/
+│       ├── doors_windows5/
+│       ├── doors_windows6/
+│       ├── doors_windows7/
+│       └── doors_windows8/
+├── test.sh
+├── train.py
+├── uploads/ (empty or contains other files not listed)
+└── yolov8n.pt
